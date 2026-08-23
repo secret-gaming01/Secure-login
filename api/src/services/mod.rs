@@ -10,5 +10,6 @@ pub mod mfa;
 pub mod passkeys;
 pub mod sessions;
 pub mod stats;
+pub mod store;
 pub mod tokens_svc;
 pub mod users;

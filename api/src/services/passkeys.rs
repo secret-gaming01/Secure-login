@@ -2,7 +2,7 @@
 //!
 //! Les credentials (structure `Passkey` serialisee) sont chiffres
 //! AES-256-GCM au repos. Les challenges d'enregistrement/authentification
-//! sont conserves en memoire 10 min max (store partagÃ© requis en multi-instance).
+//! sont conserves en memoire 10 min max (store partagÃƒÆ’Ã‚Â© requis en multi-instance).
 
 use sqlx::error::DatabaseError;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
@@ -17,9 +17,7 @@ use crate::q_fetch_all;
 use crate::q_fetch_optional;
 use crate::services::audit;
 use crate::state::AppState;
-use std::time::{Duration, Instant};
 
-const STATE_TTL: Duration = Duration::from_secs(600);
 
 async fn user_passkeys(state: &AppState, user_id: &str) -> AppResult<Vec<Passkey>> {
     let rows: Vec<PasskeyRow> = q_fetch_all!(
@@ -38,9 +36,6 @@ async fn user_passkeys(state: &AppState, user_id: &str) -> AppResult<Vec<Passkey
         .map_err(|e| AppError::internal(format!("passkey decode: {e}")))
 }
 
-fn cleanup(map: &mut std::collections::HashMap<String, (impl Clone, Instant)>) {
-    map.retain(|_, (_, at)| at.elapsed() < STATE_TTL);
-}
 
 // ---------------------------------------------------------------------------
 // Enregistrement
@@ -60,9 +55,12 @@ pub async fn registration_options(
         .start_passkey_registration(uuid, email, Some(email), exclude)
         .map_err(|e| AppError::internal(format!("webauthn start_reg: {e}")))?;
 
-    let mut map = state.wa_reg.lock().unwrap();
-    cleanup(&mut map);
-    map.insert(user_id.to_string(), (reg_state, Instant::now()));
+    let serialized = serde_json::to_string(&reg_state)
+        .map_err(|e| AppError::internal(format!("serde wa_reg: {e}")))?;
+    state
+        .store
+        .kv_put(&crate::services::store::wa_reg_key(user_id), &serialized, 600)
+        .await;
     Ok(ccr)
 }
 
@@ -72,14 +70,13 @@ pub async fn registration_finish(
     name: &str,
     resp: &RegisterPublicKeyCredential,
 ) -> AppResult<String> {
-    let reg_state = state
-        .wa_reg
-        .lock()
-        .unwrap()
-        .remove(user_id)
-        .filter(|(_, at)| at.elapsed() < STATE_TTL)
-        .map(|(s, _)| s)
+    let raw = state
+        .store
+        .kv_take(&crate::services::store::wa_reg_key(user_id))
+        .await
         .ok_or_else(|| AppError::validation("No pending passkey registration"))?;
+    let reg_state: PasskeyRegistration = serde_json::from_str(&raw)
+        .map_err(|e| AppError::validation(format!("expired challenge: {e}")))?;
 
     let passkey = state
         .webauthn
@@ -162,9 +159,12 @@ pub async fn authentication_options(
         b
     });
 
-    let mut map = state.wa_auth.lock().unwrap();
-    cleanup(&mut map);
-    map.insert(challenge_id.clone(), (auth_state, Instant::now()));
+    let serialized = serde_json::to_string(&auth_state)
+        .map_err(|e| AppError::internal(format!("serde wa_auth: {e}")))?;
+    state
+        .store
+        .kv_put(&crate::services::store::wa_auth_key(&challenge_id), &serialized, 600)
+        .await;
     Ok((challenge_id, rcr))
 }
 
@@ -173,14 +173,13 @@ pub async fn authentication_finish(
     challenge_id: &str,
     resp: &PublicKeyCredential,
 ) -> AppResult<(String, String)> {
-    let auth_state = state
-        .wa_auth
-        .lock()
-        .unwrap()
-        .remove(challenge_id)
-        .filter(|(_, at)| at.elapsed() < STATE_TTL)
-        .map(|(s, _)| s)
+    let raw = state
+        .store
+        .kv_take(&crate::services::store::wa_auth_key(challenge_id))
+        .await
         .ok_or_else(|| AppError::validation("No pending passkey authentication"))?;
+    let auth_state: PasskeyAuthentication = serde_json::from_str(&raw)
+        .map_err(|e| AppError::validation(format!("expired challenge: {e}")))?;
 
     let (_passkey, _result) = state
         .webauthn

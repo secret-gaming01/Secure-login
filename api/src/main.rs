@@ -79,16 +79,12 @@ async fn main() -> anyhow::Result<()> {
         enc: crypto::encrypt::Encryptor::new(&cfg.encryption_key),
         jwt: crypto::jwt::JwtKeys::new(&cfg.jwt_secret),
         geo_cache: Default::default(),
-        rl: Default::default(),
+        store: services::store::Store::from_env().await,
         settings: settings.clone(),
         cfg: cfg.clone(),
         mailer: services::mailer::Mailer::from_env(),
         #[cfg(feature = "webauthn")]
         webauthn: state::build_webauthn(&cfg)?,
-        #[cfg(feature = "webauthn")]
-        wa_reg: Default::default(),
-        #[cfg(feature = "webauthn")]
-        wa_auth: Default::default(),
     };
 
     // CORS

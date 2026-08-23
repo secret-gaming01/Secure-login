@@ -6,10 +6,12 @@ description = "Ultra-secure universal authentication system (Axum + SQLx, Postgr
 license = "MIT"
 
 [features]
-default = ["webauthn"]
+default = ["webauthn", "redis-store"]
 # Passkeys/WebAuthn (tire compact_jwt -> OpenSSL natif ; desactivable pour des
 # builds sans dependances C : cargo check/build --no-default-features)
 webauthn = ["dep:webauthn-rs"]
+# Store partage Redis (rate-limit multi-instance + etats WebAuthn)
+redis-store = ["dep:redis"]
 
 [dependencies]
 axum = "0.7"
@@ -54,6 +56,7 @@ webauthn-rs = { version = "0.4", optional = true }
 url = "2"
 
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+redis = { version = "0.25", optional = true, default-features = false, features = ["tokio-comp"] }
 
 thiserror = "1"
 anyhow = "1"

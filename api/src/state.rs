@@ -1,4 +1,4 @@
-//! Ã‰tat applicatif partagÃ© (Arc).
+//! Ãƒâ€°tat applicatif partagÃƒÂ© (Arc).
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -10,29 +10,17 @@ use crate::crypto::jwt::JwtKeys;
 use crate::db::Db;
 
 #[cfg(feature = "webauthn")]
-use webauthn_rs::prelude::{PasskeyAuthentication, PasskeyRegistration, Webauthn, WebauthnBuilder};
+use webauthn_rs::prelude::{Webauthn, WebauthnBuilder};
 
 #[cfg(feature = "webauthn")]
 pub type WebAuthnInstance = Webauthn;
 #[cfg(not(feature = "webauthn"))]
 pub type WebAuthnInstance = ();
 
-#[cfg(feature = "webauthn")]
-pub type WaRegMap = Arc<Mutex<HashMap<String, (PasskeyRegistration, Instant)>>>;
-#[cfg(not(feature = "webauthn"))]
-pub type WaRegMap = Arc<Mutex<HashMap<String, ()>>>;
-
-#[cfg(feature = "webauthn")]
-pub type WaAuthMap = Arc<Mutex<HashMap<String, (PasskeyAuthentication, Instant)>>>;
-#[cfg(not(feature = "webauthn"))]
-pub type WaAuthMap = Arc<Mutex<HashMap<String, ()>>>;
-
 pub type GeoCache = Arc<Mutex<HashMap<String, (String, String, Instant)>>>;
-pub type RateBuckets = Arc<Mutex<HashMap<String, Vec<Instant>>>>;
-pub type WaRegMap = Arc<Mutex<HashMap<String, (PasskeyRegistration, Instant)>>>;
-pub type WaAuthMap = Arc<Mutex<HashMap<String, (PasskeyAuthentication, Instant)>>>;
+pub type SharedStore = crate::services::store::Store;
 
-/// ParamÃ¨tres runtime modifiables depuis le dashboard (page configuration).
+/// ParamÃƒÂ¨tres runtime modifiables depuis le dashboard (page configuration).
 #[derive(Debug, Clone)]
 pub struct RuntimeSettingsInner {
     pub max_failed_logins: u32,
@@ -64,9 +52,8 @@ pub struct AppState {
     pub jwt: JwtKeys,
     pub webauthn: WebAuthnInstance,
     pub geo_cache: GeoCache,
-    pub rl: RateBuckets,
-    pub wa_reg: WaRegMap,
-    pub wa_auth: WaAuthMap,
+    pub store: SharedStore,
+
     pub settings: RuntimeSettings,
     pub mailer: crate::services::mailer::Mailer,
 }
@@ -91,7 +78,7 @@ pub fn build_webauthn(_cfg: &Config) -> anyhow::Result<WebAuthnInstance> {
     Ok(())
 }
 
-/// Scopes dÃ©rivÃ©s du rÃ´le (modÃ¨le RBAC simple et vÃ©rifiable cÃ´tÃ© API).
+/// Scopes dÃƒÂ©rivÃƒÂ©s du rÃƒÂ´le (modÃƒÂ¨le RBAC simple et vÃƒÂ©rifiable cÃƒÂ´tÃƒÂ© API).
 pub fn scopes_for_role(role: &str) -> Vec<&'static str> {
     match role {
         "owner" => vec![

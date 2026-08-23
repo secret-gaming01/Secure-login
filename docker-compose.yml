@@ -1,4 +1,9 @@
 services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    restart: unless-stopped
+
   db:
     image: postgres:16-alpine
     environment:
@@ -33,6 +38,7 @@ services:
       RP_NAME: Secure Login
       RP_ORIGIN: http://localhost:8080
       GEO_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
     ports:
       - "8080:8080"
 

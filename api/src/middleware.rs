@@ -1,4 +1,4 @@
-//! Middlewares HTTP : en-têtes de sécurité, pare-feu IP (blacklist/whitelist),
+//! Middlewares HTTP : en-tÃªtes de sÃ©curitÃ©, pare-feu IP (blacklist/whitelist),
 //! rate limiting global et protection CSRF (double-submit pour navigateurs).
 
 use axum::extract::ConnectInfo;
@@ -7,12 +7,11 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use serde_json::json;
 use std::net::SocketAddr;
-use std::time::{Duration, Instant};
 
 use crate::extract::client_ip;
 use crate::state::AppState;
 
-/// Ajoute les en-têtes de sécurité à chaque réponse.
+/// Ajoute les en-tÃªtes de sÃ©curitÃ© Ã  chaque rÃ©ponse.
 pub async fn security_headers(_req: Request<axum::body::Body>, next: Next) -> Response {
     let mut resp = next.run(_req).await;
     let h = resp.headers_mut();
@@ -50,11 +49,11 @@ fn cookie_value(headers: &HeaderMap, name: &str) -> Option<String> {
 }
 
 /// Pare-feu applicatif :
-/// 1. Whitelist IP → contournement des limites
-/// 2. Blacklist IP → 403 immédiat
-/// 3. Rate limit global par fenêtre glissante en mémoire
-/// 4. CSRF : si la requête vient d'un navigateur (header Origin/Referer
-///    présent) sur une route mutante, exige le couple Cookie csrf +
+/// 1. Whitelist IP â†’ contournement des limites
+/// 2. Blacklist IP â†’ 403 immÃ©diat
+/// 3. Rate limit global par fenÃªtre glissante en mÃ©moire
+/// 4. CSRF : si la requÃªte vient d'un navigateur (header Origin/Referer
+///    prÃ©sent) sur une route mutante, exige le couple Cookie csrf +
 ///    header X-CSRF-Token identique (double-submit).
 pub async fn network_guard(
     axum::extract::State(state): axum::extract::State<AppState>,
@@ -70,7 +69,7 @@ pub async fn network_guard(
         .extensions()
         .get::<ConnectInfo<SocketAddr>>()
         .map(|c| c.0)
-        .expect("ConnectInfo missing — use into_make_service_with_connect_info");
+        .expect("ConnectInfo missing â€” use into_make_service_with_connect_info");
     let ip = client_ip(req.headers(), addr, state.cfg.trust_proxy);
 
     // --- IP intelligence ---
@@ -116,27 +115,17 @@ pub async fn network_guard(
         }
     }
 
-    // --- Rate limit global ---
-    let cap = state.settings.read().unwrap().rate_limit_per_min as usize;
+    // --- Rate limit global (fenetre fixe partagee memoire ou Redis) ---
+    let cap = state.settings.read().unwrap().rate_limit_per_min;
     if cap > 0 {
-        let now = Instant::now();
-        let mut buckets = state.rl.lock().unwrap();
-        let entry = buckets.entry(ip.clone()).or_default();
-        entry.retain(|t| now.duration_since(*t) < Duration::from_secs(60));
-        if entry.len() >= cap {
-            drop(buckets);
+        let allowed = state.store.rl_hit(&ip, cap, 60).await;
+        if !allowed {
             tracing::warn!("rate limited ip={}", ip);
             return (
                 StatusCode::TOO_MANY_REQUESTS,
                 axum::Json(json!({"error": "Too many requests"})),
             )
                 .into_response();
-        }
-        entry.push(now);
-
-        // nettoyage opportuniste
-        if buckets.len() > 10_000 {
-            buckets.retain(|_, v| !v.is_empty());
         }
     }
 
