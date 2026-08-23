@@ -27,7 +27,7 @@ impl Encryptor {
     pub fn new(secret: &str) -> Self {
         let key = Sha256::digest(secret.as_bytes());
         Self {
-            cipher: Aes256Gcm::new(key.as_slice().into()),
+            cipher: Aes256Gcm::new(aes_gcm::aead::generic_array::GenericArray::from_slice(&key)),
         }
     }
 

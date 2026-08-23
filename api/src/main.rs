@@ -75,13 +75,16 @@ async fn main() -> anyhow::Result<()> {
         db,
         enc: crypto::encrypt::Encryptor::new(&cfg.encryption_key),
         jwt: crypto::jwt::JwtKeys::new(&cfg.jwt_secret),
-        webauthn: state::build_webauthn(&cfg)?,
         geo_cache: Default::default(),
         rl: Default::default(),
-        wa_reg: Default::default(),
-        wa_auth: Default::default(),
         settings: settings.clone(),
         cfg: cfg.clone(),
+        #[cfg(feature = "webauthn")]
+        webauthn: state::build_webauthn(&cfg)?,
+        #[cfg(feature = "webauthn")]
+        wa_reg: Default::default(),
+        #[cfg(feature = "webauthn")]
+        wa_auth: Default::default(),
     };
 
     // CORS
@@ -114,8 +117,10 @@ async fn main() -> anyhow::Result<()> {
         .merge(routes::auth::router())
         .merge(routes::login::router())
         .merge(routes::account::router())
-        .merge(routes::passkeys::router())
         .merge(routes::admin::router());
+
+    #[cfg(feature = "webauthn")]
+    let api = api.merge(routes::passkeys::router());
 
     let app = Router::new()
         .route("/", get(|| async { Redirect::temporary("/dashboard/") }))

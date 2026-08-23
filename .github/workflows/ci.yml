@@ -14,7 +14,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo check
         working-directory: api
-        run: cargo check --all-targets
+        run: |
+          RC=0
+          cargo check --all-targets > /tmp/api_check.log 2>&1 || RC=$?
+          {
+            echo "### cargo check (api) — exit $RC"
+            echo '```'
+            tail -n 300 /tmp/api_check.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$RC" -eq 0
 
   sdk-js:
     name: SDK JavaScript/TypeScript
@@ -45,8 +54,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - working-directory: sdk/rust
-        run: cargo check
+      - name: cargo check
+        working-directory: sdk/rust
+        run: |
+          RC=0
+          cargo check --all-targets > /tmp/sdk_check.log 2>&1 || RC=$?
+          {
+            echo "### cargo check (sdk/rust) — exit $RC"
+            echo '```'
+            tail -n 200 /tmp/sdk_check.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$RC" -eq 0
+      - name: cargo test
+        working-directory: sdk/rust
+        run: |
+          RC=0
+          cargo test > /tmp/sdk_test.log 2>&1 || RC=$?
+          {
+            echo "### cargo test (sdk/rust) — exit $RC"
+            echo '```'
+            tail -n 150 /tmp/sdk_test.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$RC" -eq 0
 
   sdk-csharp:
     name: SDK C#

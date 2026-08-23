@@ -5,6 +5,7 @@ pub mod captcha;
 pub mod ipintel;
 pub mod mailer;
 pub mod mfa;
+#[cfg(feature = "webauthn")]
 pub mod passkeys;
 pub mod sessions;
 pub mod stats;

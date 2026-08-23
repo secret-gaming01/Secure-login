@@ -68,10 +68,9 @@ impl IntoResponse for AppError {
         };
 
         let mut resp = (status, Json(json!({ "error": message }))).into_response();
-        if let AppError::RateLimited(_) = self {
-            if let Ok(v) = "60".parse() {
-                resp.headers_mut().insert("Retry-After", axum::http::HeaderValue::from(v));
-            }
+        if matches!(self, AppError::RateLimited(_)) {
+            resp.headers_mut()
+                .insert("Retry-After", axum::http::HeaderValue::from_static("60"));
         }
         resp
     }

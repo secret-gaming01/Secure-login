@@ -11,7 +11,7 @@ use crate::q_fetch_all;
 use crate::q_fetch_optional;
 use crate::q_scalar;
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, serde::Serialize)]
 pub struct UserListItem {
     pub id: String,
     pub email: String,

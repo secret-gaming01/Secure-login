@@ -1,9 +1,9 @@
-//! Structures SQL mappées via sqlx::FromRow — compatibles PG & SQLite.
+//! Structures SQL mappÃ©es via sqlx::FromRow â€” compatibles PG & SQLite.
 
 use chrono::{DateTime, Utc};
 use sqlx::FromRow;
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct User {
     pub id: String,
     pub email: String,
@@ -20,7 +20,7 @@ pub struct User {
     pub last_login_device: Option<String>,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct Session {
     pub id: String,
     pub user_id: String,
@@ -36,7 +36,7 @@ pub struct Session {
     pub revoked: bool,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct TokenRow {
     pub id: String,
     pub user_id: Option<String>,
@@ -48,7 +48,7 @@ pub struct TokenRow {
     pub meta: Option<String>,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct BlockedIp {
     pub id: String,
     pub ip: String,
@@ -59,7 +59,7 @@ pub struct BlockedIp {
     pub expires_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct PasskeyRow {
     pub id: String,
     pub user_id: String,
@@ -72,7 +72,7 @@ pub struct PasskeyRow {
     pub last_used_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct MfaRow {
     pub user_id: String,
     pub secret_enc: String,
@@ -82,7 +82,7 @@ pub struct MfaRow {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct SecurityLog {
     pub id: String,
     pub user_id: Option<String>,
@@ -94,7 +94,7 @@ pub struct SecurityLog {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct LoginAttempt {
     pub id: String,
     pub email: Option<String>,

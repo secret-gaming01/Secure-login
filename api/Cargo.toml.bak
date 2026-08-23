@@ -5,12 +5,6 @@ edition = "2021"
 description = "Ultra-secure universal authentication system (Axum + SQLx, PostgreSQL/SQLite)"
 license = "MIT"
 
-[features]
-default = ["webauthn"]
-# Passkeys/WebAuthn (tire compact_jwt -> OpenSSL natif ; desactivable pour des
-# builds sans dependances C : cargo check/build --no-default-features)
-webauthn = ["dep:webauthn-rs"]
-
 [dependencies]
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
@@ -22,6 +16,7 @@ serde_json = "1"
 
 sqlx = { version = "0.7", default-features = false, features = [
     "runtime-tokio",
+    "tls-rustls",
     "postgres",
     "sqlite",
     "chrono",
@@ -42,10 +37,10 @@ hmac = "0.12"
 hex = "0.4"
 base64 = "0.21"
 
-webauthn-rs = { version = "0.4", optional = true }
+webauthn-rs = "0.4"
 url = "2"
 
-reqwest = { version = "0.11", default-features = false, features = ["json"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
 
 thiserror = "1"
 anyhow = "1"

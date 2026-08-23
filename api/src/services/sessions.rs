@@ -1,5 +1,5 @@
 //! Sessions : device + IP tracking, rotation des refresh tokens,
-//! révocation individuelle / globale.
+//! rÃ©vocation individuelle / globale.
 
 use chrono::{DateTime, Utc};
 use sqlx::FromRow;
@@ -11,7 +11,7 @@ use crate::q_exec;
 use crate::q_fetch_all;
 use crate::q_fetch_optional;
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, serde::Serialize)]
 pub struct AdminSession {
     pub id: String,
     pub user_id: String,
@@ -69,12 +69,12 @@ pub async fn find_by_refresh_hash(db: &Db, hash: &str) -> AppResult<Option<Sessi
     .await
 }
 
-/// Rotation du refresh token. Détecte la réutilisation (replay) :
-/// un refresh déjà consommé qui revient => compromission probable.
+/// Rotation du refresh token. DÃ©tecte la rÃ©utilisation (replay) :
+/// un refresh dÃ©jÃ  consommÃ© qui revient => compromission probable.
 pub enum RotateOutcome {
     Rotated(Box<Session>),
     Invalid,
-    /// Refresh déjà utilisé une fois → on révoque TOUTES les sessions.
+    /// Refresh dÃ©jÃ  utilisÃ© une fois â†’ on rÃ©voque TOUTES les sessions.
     ReuseDetected(String),
 }
 
@@ -88,7 +88,7 @@ pub async fn rotate_refresh(db: &Db, presented_hash: &str, new_hash: &str, ttl_s
         return Ok(RotateOutcome::Invalid);
     }
 
-    // Le refresh a-t-il déjà été remplacé ? (il existe une trace "rotated")
+    // Le refresh a-t-il dÃ©jÃ  Ã©tÃ© remplacÃ© ? (il existe une trace "rotated")
     let already_rotated = was_refresh_rotated(db, presented_hash).await?;
     if already_rotated {
         revoke_all_for_user(db, &session.user_id).await?;
@@ -107,7 +107,7 @@ pub async fn rotate_refresh(db: &Db, presented_hash: &str, new_hash: &str, ttl_s
     )
     .await?;
 
-    // Trace anti-replay : l'ancien refresh ne doit plus jamais être accepté
+    // Trace anti-replay : l'ancien refresh ne doit plus jamais Ãªtre acceptÃ©
     let tid = uuid::Uuid::new_v4().to_string();
     q_exec!(
         db,

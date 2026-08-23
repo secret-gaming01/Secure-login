@@ -1,5 +1,5 @@
 /**
- * Secure-Login SDK — JavaScript / TypeScript
+ * Secure-Login SDK â€” JavaScript / TypeScript
  * Client universel pour l'API secure-auth-api (navigateur & Node 18+).
  */
 
@@ -30,8 +30,8 @@ export class SecureAuthError extends Error {
 }
 
 export class SecureAuthClient {
-  private accessToken: string | null = null;
-  private refreshToken: string | null = null;
+  private _accessToken: string | null = null;
+  private _refreshToken: string | null = null;
   private fetchImpl: typeof fetch;
 
   constructor(
@@ -44,19 +44,19 @@ export class SecureAuthClient {
 
   /* ---- tokens ---- */
   setTokens(access: string, refresh?: string) {
-    this.accessToken = access;
-    if (refresh) this.refreshToken = refresh;
+    this._accessToken = access;
+    if (refresh) this._refreshToken = refresh;
   }
-  getAccessToken() { return this.accessToken; }
-  getRefreshToken() { return this.refreshToken; }
-  clearTokens() { this.accessToken = null; this.refreshToken = null; }
+  getAccessToken() { return this._accessToken; }
+  getRefreshToken() { return this._refreshToken; }
+  clearTokens() { this._accessToken = null; this._refreshToken = null; }
 
   private async request<T>(path: string, opts: RequestOptions = {}, authed = true): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(opts.headers || {}),
     };
-    if (authed && this.accessToken) headers['Authorization'] = `Bearer ${this.accessToken}`;
+    if (authed && this._accessToken) headers['Authorization'] = `Bearer ${this._accessToken}`;
 
     const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: opts.method || 'GET',
@@ -69,14 +69,14 @@ export class SecureAuthClient {
     return data as T;
   }
 
-  /* ---- auth core (spécification SDK obligatoire) ---- */
+  /* ---- auth core (spÃ©cification SDK obligatoire) ---- */
 
-  /** Créer un compte. */
+  /** CrÃ©er un compte. */
   async register(email: string, password: string): Promise<{ user_id: string; message: string }> {
     return this.request('/auth/register', { method: 'POST', body: { email, password } }, false);
   }
 
-  /** Connexion. Si MFA actif : renvoie mfa_required + mfa_token → utiliser loginMfa(). */
+  /** Connexion. Si MFA actif : renvoie mfa_required + mfa_token â†’ utiliser loginMfa(). */
   async login(email: string, password: string, captchaToken?: string): Promise<LoginResult> {
     const r = await this.request<LoginResult>('/auth/login', {
       method: 'POST',
@@ -86,7 +86,7 @@ export class SecureAuthClient {
     return r;
   }
 
-  /** Finalise une connexion MFA (TOTP ou code de récupération). */
+  /** Finalise une connexion MFA (TOTP ou code de rÃ©cupÃ©ration). */
   async loginMfa(mfaToken: string, code: string): Promise<LoginResult> {
     const r = await this.request<LoginResult>('/auth/mfa/verify', {
       method: 'POST',
@@ -96,12 +96,12 @@ export class SecureAuthClient {
     return r;
   }
 
-  /** Rotation du refresh token → nouveaux tokens stockés. */
+  /** Rotation du refresh token â†’ nouveaux tokens stockÃ©s. */
   async refreshToken(): Promise<Tokens> {
-    if (!this.refreshToken) throw new SecureAuthError(401, { error: 'No refresh token' });
+    if (!this._refreshToken) throw new SecureAuthError(401, { error: 'No refresh token' });
     const r = await this.request<Tokens>('/auth/token/refresh', {
       method: 'POST',
-      body: { refresh_token: this.refreshToken },
+      body: { refresh_token: this._refreshToken },
     }, false);
     this.setTokens(r.access_token, r.refresh_token);
     return r;
@@ -112,13 +112,13 @@ export class SecureAuthClient {
     return this.request('/auth/me');
   }
 
-  /** Déconnexion de la session courante. */
+  /** DÃ©connexion de la session courante. */
   async logout(): Promise<void> {
     try { await this.request('/auth/logout', { method: 'POST', body: {} }); }
     finally { this.clearTokens(); }
   }
 
-  /** Vérifie une permission/scope côté serveur (via /auth/me). */
+  /** VÃ©rifie une permission/scope cÃ´tÃ© serveur (via /auth/me). */
   async checkPermission(scope: string): Promise<boolean> {
     try {
       const me = await this.getCurrentUser();
