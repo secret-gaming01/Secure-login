@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   api:
     name: API (Rust/Axum)
@@ -23,7 +26,17 @@ jobs:
             tail -n 300 /tmp/api_check.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          tail -n 400 /tmp/api_check.log > ci-api.log
           test "$RC" -eq 0
+
+      - name: publish error log
+        if: failure()
+        run: |
+          git config user.email ci@bot.local
+          git config user.name ci-bot
+          git add ci-api.log
+          git commit -m "ci: api check log [skip ci]" || true
+          git push || true
 
   sdk-js:
     name: SDK JavaScript/TypeScript
@@ -65,7 +78,18 @@ jobs:
             tail -n 200 /tmp/sdk_check.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          tail -n 300 /tmp/sdk_check.log > ci-sdk-rust.log
           test "$RC" -eq 0
+
+      - name: publish error log
+        if: failure()
+        working-directory: .
+        run: |
+          git config user.email ci@bot.local
+          git config user.name ci-bot
+          git add ci-sdk-rust.log
+          git commit -m "ci: sdk rust check log [skip ci]" || true
+          git push || true
       - name: cargo test
         working-directory: sdk/rust
         run: |

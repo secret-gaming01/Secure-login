@@ -9,6 +9,9 @@
   "scripts": {
     "build": "tsc"
   },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
   "keywords": ["auth", "security", "mfa", "passkeys", "webauthn", "jwt"],
   "license": "MIT"
 }
