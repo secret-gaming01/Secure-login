@@ -6,6 +6,35 @@ versionnement [SemVer](https://semver.org/lang/fr/).
 
 ---
 
+## [1.1.0] — 2026-08-23
+
+### Ajouté
+- **QR code MFA côté serveur** : `GET /auth/mfa/qrcode` renvoie le QR du secret
+  TOTP en SVG (`qrcodegen`, aucune dépendance C).
+- **Bootstrap owner automatique** : au premier démarrage, si la base est vide et
+  `OWNER_EMAIL` défini, création d'un compte owner avec mot de passe aléatoire
+  affiché une fois dans les logs.
+- **Récupération assistée** : `POST /admin/users/{id}/reset-link` génère un lien
+  de réinitialisation (1 h) — audit `critical`.
+- **Envoi SMTP réel** via `lettre` (rustls) : `EMAIL_MODE=smtp`,
+  `SMTP_HOST/PORT/SECURE/USER/PASS`, STARTTLS/SSL/none, envoi non bloquant.
+- **Store partagé mémoire/Redis** (`REDIS_URL`) : rate-limit global atomique
+  (INCR+EXPIRE, fail-open journalisé) et états WebAuthn sérialisés avec TTL →
+  déploiement multi-instances. Service `redis` ajouté à docker-compose.
+
+### Changé
+- Rate-limit déplacé vers le store partagé (fenêtre fixe au lieu de glissante).
+- Les challenges WebAuthn ne vivent plus en mémoire process (clés `wa:reg:*` /
+  `wa:auth:*`, TTL 10 min).
+
+### Corrigé
+- Collision champ/méthode `refreshToken` dans le SDK JS.
+- Dérives `Serialize` manquantes sur plusieurs modèles SQL renvoyés en JSON.
+- Import du trait `DatabaseError` (détection d'unicité email/passkey).
+- Encodage des commentaires après réécritures PowerShell (mojibake).
+
+---
+
 ## [1.0.0] — 2026-08-23
 
 Première version stable. 🎉

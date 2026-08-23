@@ -1,4 +1,4 @@
-//! Structures SQL mappÃ©es via sqlx::FromRow â€” compatibles PG & SQLite.
+//! Structures SQL mappées via sqlx::FromRow — compatibles PG & SQLite.
 
 use chrono::{DateTime, Utc};
 use sqlx::FromRow;

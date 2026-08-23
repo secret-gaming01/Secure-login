@@ -1,4 +1,4 @@
-//! Secure-Login SDK â€” Rust.
+//! Secure-Login SDK — Rust.
 //!
 //! ```no_run
 //! use secure_login_sdk::SecureAuthClient;

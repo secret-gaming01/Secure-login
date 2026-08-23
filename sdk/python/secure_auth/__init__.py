@@ -179,4 +179,4 @@ class SecureAuthClient:
 
 
 __all__ = ["SecureAuthClient", "SecureAuthError"]
-__version__ = "1.0.0"
+__version__ = "1.1.0"

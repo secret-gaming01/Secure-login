@@ -1,4 +1,4 @@
-//! Ãƒâ€°tat applicatif partagÃƒÂ© (Arc).
+//! État applicatif partagé (Arc).
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -20,7 +20,7 @@ pub type WebAuthnInstance = ();
 pub type GeoCache = Arc<Mutex<HashMap<String, (String, String, Instant)>>>;
 pub type SharedStore = crate::services::store::Store;
 
-/// ParamÃƒÂ¨tres runtime modifiables depuis le dashboard (page configuration).
+/// Paramètres runtime modifiables depuis le dashboard (page configuration).
 #[derive(Debug, Clone)]
 pub struct RuntimeSettingsInner {
     pub max_failed_logins: u32,
@@ -78,7 +78,7 @@ pub fn build_webauthn(_cfg: &Config) -> anyhow::Result<WebAuthnInstance> {
     Ok(())
 }
 
-/// Scopes dÃƒÂ©rivÃƒÂ©s du rÃƒÂ´le (modÃƒÂ¨le RBAC simple et vÃƒÂ©rifiable cÃƒÂ´tÃƒÂ© API).
+/// Scopes dérivés du rôle (modèle RBAC simple et vérifiable côté API).
 pub fn scopes_for_role(role: &str) -> Vec<&'static str> {
     match role {
         "owner" => vec![
