@@ -1,0 +1,14 @@
+{
+  "name": "@secure-login/sdk",
+  "version": "0.1.0",
+  "description": "Official JavaScript/TypeScript SDK for Secure-Login authentication API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["auth", "security", "mfa", "passkeys", "webauthn", "jwt"],
+  "license": "MIT"
+}

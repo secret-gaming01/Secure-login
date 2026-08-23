@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  api:
+    name: API (Rust/Axum)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo check
+        working-directory: api
+        run: cargo check --all-targets
+
+  sdk-js:
+    name: SDK JavaScript/TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: sdk/js
+        run: npm install
+      - working-directory: sdk/js
+        run: npx tsc --noEmit
+
+  sdk-python:
+    name: SDK Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m py_compile sdk/python/secure_auth/__init__.py tests/python/test_sdk.py
+
+  sdk-rust:
+    name: SDK Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - working-directory: sdk/rust
+        run: cargo check
+
+  sdk-csharp:
+    name: SDK C#
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - working-directory: sdk/csharp/SecureAuth
+        run: dotnet build -c Release

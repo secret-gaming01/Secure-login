@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure-Login · Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ===== Login ===== -->
+<div id="login-view" class="center-screen">
+  <div class="card login-card">
+    <h1>🔐 Secure-Login</h1>
+    <p class="muted">Connexion administrateur requise</p>
+    <label>Email<input type="email" id="login-email" autocomplete="username"></label>
+    <label>Mot de passe<input type="password" id="login-password" autocomplete="current-password"></label>
+    <button id="login-btn" class="btn primary">Se connecter</button>
+    <p id="login-error" class="error"></p>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<div id="app-view" class="hidden">
+  <header>
+    <div class="brand">🔐 Secure-Login <span class="badge">admin</span></div>
+    <nav id="tabs">
+      <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="users">Utilisateurs</button>
+      <button data-tab="sessions">Sessions</button>
+      <button data-tab="security">Sécurité</button>
+      <button data-tab="logs">Logs</button>
+      <button data-tab="config">Configuration</button>
+    </nav>
+    <button id="logout-btn" class="btn ghost">Déconnexion</button>
+  </header>
+
+  <main>
+    <!-- Overview -->
+    <section id="tab-overview" class="tab active">
+      <div id="stats-cards" class="cards"></div>
+      <div class="card"><h3>Activité (14 jours)</h3><canvas id="activity-chart" height="110"></canvas></div>
+    </section>
+
+    <!-- Users -->
+    <section id="tab-users" class="tab">
+      <div class="toolbar">
+        <input id="user-search" placeholder="Rechercher un email…">
+        <button id="user-search-btn" class="btn">Rechercher</button>
+      </div>
+      <div class="card table-wrap"><table id="users-table"><thead>
+        <tr><th>ID</th><th>Email</th><th>Rôle</th><th>Vérifié</th><th>Dernière IP</th><th>Dernier login</th><th></th></tr>
+      </thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- Sessions -->
+    <section id="tab-sessions" class="tab">
+      <div class="card table-wrap"><table id="sessions-table"><thead>
+        <tr><th>Session</th><th>Utilisateur</th><th>Device</th><th>IP</th><th>Pays</th><th>Vu</th><th>Expire</th><th></th></tr>
+      </thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- Security -->
+    <section id="tab-security" class="tab">
+      <div class="grid-2">
+        <div class="card">
+          <h3>Bloquer une IP</h3>
+          <label>IP<input id="bl-ip" placeholder="203.0.113.10"></label>
+          <label>Mode
+            <select id="bl-mode"><option value="blacklist">blacklist</option><option value="whitelist">whitelist</option></select>
+          </label>
+          <label>Raison<input id="bl-reason" placeholder="abuse…"></label>
+          <label>Expiration (min, vide = permanente)<input id="bl-ttl" type="number" min="1"></label>
+          <button id="bl-submit" class="btn danger">Bloquer</button>
+        </div>
+        <div class="card">
+          <h3>IP suspectes (24 h)</h3>
+          <div class="table-wrap"><table id="suspicious-table"><thead>
+            <tr><th>IP</th><th>Échecs</th><th>Total</th><th>Blacklistée</th><th></th></tr>
+          </thead><tbody></tbody></table></div>
+        </div>
+        <div class="card wide">
+          <h3>Doubles comptes (même IP)</h3>
+          <div id="doubles-list"></div>
+        </div>
+        <div class="card wide">
+          <h3>Liste de blocage</h3>
+          <div class="table-wrap"><table id="blocked-table"><thead>
+            <tr><th>IP</th><th>Mode</th><th>Raison</th><th>Créé</th><th>Expire</th><th></th></tr>
+          </thead><tbody></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Logs -->
+    <section id="tab-logs" class="tab">
+      <div class="card table-wrap"><table id="logs-table"><thead>
+        <tr><th>Date</th><th>Sévérité</th><th>Événement</th><th>User</th><th>IP</th><th>Pays</th><th>Détails</th></tr>
+      </thead><tbody></tbody></table></div>
+    </section>
+
+    <!-- Config -->
+    <section id="tab-config" class="tab">
+      <div class="card narrow">
+        <h3>Paramètres runtime</h3>
+        <label>Max tentatives échouées<input id="cfg-max-failed" type="number" min="1"></label>
+        <label>Cooldown de base (s)<input id="cfg-lockout" type="number" min="60"></label>
+        <label>Seuil IP suspecte<input id="cfg-suspicious" type="number" min="3"></label>
+        <label>Min comptes = double compte<input id="cfg-double" type="number" min="2"></label>
+        <label>Rate limit / min / IP<input id="cfg-rate" type="number" min="10"></label>
+        <button id="cfg-save" class="btn primary">Enregistrer</button>
+        <pre id="cfg-raw" class="muted small"></pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

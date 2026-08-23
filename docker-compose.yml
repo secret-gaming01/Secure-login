@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: secure
+      POSTGRES_PASSWORD: secure
+      POSTGRES_DB: secure_login
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secure -d secure_login"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      BASE_URL: http://localhost:8080
+      DATABASE_URL: postgres://secure:secure@db:5432/secure_login
+      JWT_SECRET: ${JWT_SECRET:-dev-only-jwt-secret-change-me-please-0123456789abcdef0123456789abcdef}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev-only-encryption-key-change-me}
+      PASSWORD_PEPPER: ${PASSWORD_PEPPER:-dev-only-pepper-change-me}
+      RP_ID: localhost
+      RP_NAME: Secure Login
+      RP_ORIGIN: http://localhost:8080
+      GEO_ENABLED: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
