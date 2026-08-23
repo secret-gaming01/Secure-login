@@ -1,4 +1,4 @@
-"""Secure-Login SDK â€” Python.
+"""Secure-Login SDK Ã¢â‚¬â€ Python.
 
 Client synchrone (requests) pour l'API secure-auth-api.
 
@@ -179,4 +179,4 @@ class SecureAuthClient:
 
 
 __all__ = ["SecureAuthClient", "SecureAuthError"]
-__version__ = "0.1.0"
+__version__ = "1.0.0"

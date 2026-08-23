@@ -1,6 +1,6 @@
 {
   "name": "@secure-login/sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Official JavaScript/TypeScript SDK for Secure-Login authentication API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
