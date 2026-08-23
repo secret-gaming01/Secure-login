@@ -48,6 +48,9 @@ async fn main() -> anyhow::Result<()> {
     db.migrate().await?;
     tracing::info!("migrations applied");
 
+    // Creation du premier owner si OWNER_EMAIL est defini et base vide
+    services::bootstrap::bootstrap_owner(&state).await;
+
     let settings = Arc::new(std::sync::RwLock::new(RuntimeSettingsInner {
         max_failed_logins: std::env::var("MAX_FAILED_LOGINS")
             .ok()

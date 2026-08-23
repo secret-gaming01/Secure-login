@@ -1,6 +1,7 @@
 pub mod adminsvc;
 pub mod audit;
 pub mod auth_flow;
+pub mod bootstrap;
 pub mod captcha;
 pub mod ipintel;
 pub mod mailer;
