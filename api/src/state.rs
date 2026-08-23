@@ -68,6 +68,7 @@ pub struct AppState {
     pub wa_reg: WaRegMap,
     pub wa_auth: WaAuthMap,
     pub settings: RuntimeSettings,
+    pub mailer: crate::services::mailer::Mailer,
 }
 
 impl std::fmt::Debug for AppState {

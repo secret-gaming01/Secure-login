@@ -115,9 +115,7 @@ async fn user_reset_link(
     let link = format!("{}/reset-password?token={}", state.cfg.base_url, token);
 
     // Transparence : l'utilisateur est notifie sur son adresse (console en dev)
-    crate::services::mailer::send_link(
-        &state.cfg,
-        &user.email,
+    state.mailer.send_link(&user.email,
         "password reset (admin-assisted)",
         &link,
     );

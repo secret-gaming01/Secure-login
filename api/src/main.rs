@@ -82,6 +82,7 @@ async fn main() -> anyhow::Result<()> {
         rl: Default::default(),
         settings: settings.clone(),
         cfg: cfg.clone(),
+        mailer: services::mailer::Mailer::from_env(),
         #[cfg(feature = "webauthn")]
         webauthn: state::build_webauthn(&cfg)?,
         #[cfg(feature = "webauthn")]

@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 
 use crate::error::{AppError, AppResult};
 use crate::extract::client_ip;
-use crate::services::{audit, auth_flow, mailer, tokens_svc, users};
+use crate::services::{audit, auth_flow, tokens_svc, users};
 use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
@@ -65,9 +65,7 @@ async fn register(
         None,
     )
     .await?;
-    mailer::send_link(
-        &state.cfg,
-        &email,
+    state.mailer.send_link(&email,
         "email verification",
         &format!("{}/verify-email?token={}", state.cfg.base_url, token),
     );
@@ -142,9 +140,7 @@ async fn resend_verification(
                 None,
             )
             .await?;
-            mailer::send_link(
-                &state.cfg,
-                &user.email,
+            state.mailer.send_link(&user.email,
                 "email verification",
                 &format!("{}/verify-email?token={}", state.cfg.base_url, token),
             );

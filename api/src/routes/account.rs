@@ -11,7 +11,7 @@ use std::net::SocketAddr;
 
 use crate::error::{AppError, AppResult};
 use crate::extract::client_ip;
-use crate::services::{audit, auth_flow, mailer, mfa, sessions, tokens_svc};
+use crate::services::{audit, auth_flow, mfa, sessions, tokens_svc};
 use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
@@ -174,9 +174,7 @@ async fn forgot_password(
             None,
         )
         .await?;
-        mailer::send_link(
-            &state.cfg,
-            &user.email,
+        state.mailer.send_link(&user.email,
             "password reset",
             &format!("{}/reset-password?token={}", state.cfg.base_url, token),
         );
@@ -258,9 +256,7 @@ async fn change_email(
         None,
     )
     .await?;
-    mailer::send_link(
-        &state.cfg,
-        &new_email,
+    state.mailer.send_link(&new_email,
         "email verification",
         &format!("{}/verify-email?token={}", state.cfg.base_url, token),
     );
