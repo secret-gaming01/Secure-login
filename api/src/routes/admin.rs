@@ -19,6 +19,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/admin/users", get(list_users))
         .route("/admin/users/:id", delete(delete_user))
+        .route("/admin/users/:id/reset-link", post(user_reset_link))
         .route("/admin/block-ip", post(block_ip))
         .route("/admin/block-ip/:ip", delete(unblock_ip))
         .route("/admin/blocked-ips", get(list_blocked))
@@ -89,46 +90,57 @@ struct BlockIpReq {
     expires_in_minutes: Option<i64>,
 }
 
-async fn block_ip(
+/// Recuperation assistee : l'admin genere un lien de reinitialisation
+/// (utile quand l'utilisateur n'a plus acces a son email).
+/// Evenement logge en CRITICAL.
+async fn user_reset_link(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(body): Json<BlockIpReq>,
+    Path(id): Path<String>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let ctx = guard(&state, &headers, "ips.write").await?;
-    let ip = body.ip.trim();
-    if ip.parse::<std::net::IpAddr>().is_err() {
-        return Err(AppError::validation("Invalid IP address"));
-    }
-    if body.mode != "blacklist" && body.mode != "whitelist" {
-        return Err(AppError::validation("mode must be 'blacklist' or 'whitelist'"));
-    }
-    let expires = body
-        .expires_in_minutes
-        .map(|m| crate::util::now() + chrono::Duration::minutes(m));
+    let ctx = guard(&state, &headers, "users.write").await?;
+    let user = crate::services::users::get_user(&state.db, &id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
-    adminsvc::upsert_block(
+    let token = tokens_svc::issue_action_token(
         &state.db,
-        &uuid::Uuid::new_v4().to_string(),
-        ip,
-        &body.mode,
-        body.reason.as_deref().map(crate::util::sanitize),
-        &ctx.user_id,
-        expires,
+        &state.cfg.password_pepper,
+        &user.id,
+        "pw_reset",
+        3600,
+        Some("admin_assisted"),
     )
     .await?;
+    let link = format!("{}/reset-password?token={}", state.cfg.base_url, token);
+
+    // Transparence : l'utilisateur est notifie sur son adresse (console en dev)
+    crate::services::mailer::send_link(
+        &state.cfg,
+        &user.email,
+        "password reset (admin-assisted)",
+        &link,
+    );
 
     audit::log_event(
         &state,
         Some(&ctx.user_id),
-        audit::events::IP_BLOCKED,
-        audit::SEV_WARN,
+        "admin_reset_link_issued",
+        audit::SEV_CRITICAL,
         None,
         None,
-        Some(json!({ "ip": ip, "mode": body.mode })),
+        Some(json!({ "target_user": user.id, "target_email": user.email })),
     )
     .await;
-    Ok(Json(json!({ "blocked": true, "ip": ip, "mode": body.mode })))
+
+    Ok(Json(json!({
+        "reset_link": link,
+        "expires_in": 3600,
+        "note": "Transmit this link to the user through a trusted channel."
+    })))
 }
+
+async fn block_ip(
 
 async fn unblock_ip(
     State(state): State<AppState>,
