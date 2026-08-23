@@ -34,9 +34,12 @@ jobs:
         run: |
           git config user.email ci@bot.local
           git config user.name ci-bot
-          git add ci-api.log
-          git commit -m "ci: api check log [skip ci]" || true
-          git push || true
+          for i in 1 2 3 4 5; do
+            if git add -A '*/ci-api.log' 'ci-api.log' && git diff --cached --quiet; then break; fi
+            git commit -m "ci: api check log [skip ci]" || true
+            if git pull --rebase origin main && git push origin HEAD:main; then break; fi
+            sleep $((i * 5))
+          done
 
   sdk-js:
     name: SDK JavaScript/TypeScript
@@ -83,13 +86,15 @@ jobs:
 
       - name: publish error log
         if: failure()
-        working-directory: .
         run: |
           git config user.email ci@bot.local
           git config user.name ci-bot
-          git add ci-sdk-rust.log
-          git commit -m "ci: sdk rust check log [skip ci]" || true
-          git push || true
+          for i in 1 2 3 4 5; do
+            if git add -A '*/ci-sdk-rust.log' 'ci-sdk-rust.log' && git diff --cached --quiet; then break; fi
+            git commit -m "ci: sdk rust check log [skip ci]" || true
+            if git pull --rebase origin main && git push origin HEAD:main; then break; fi
+            sleep $((i * 5))
+          done
       - name: cargo test
         working-directory: sdk/rust
         run: |

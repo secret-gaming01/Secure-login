@@ -1,4 +1,4 @@
-//! Secure-Login SDK — Rust.
+//! Secure-Login SDK â€” Rust.
 //!
 //! ```no_run
 //! use secure_login_sdk::SecureAuthClient;
@@ -30,8 +30,8 @@ pub enum SdkError {
 pub struct SecureAuthClient {
     http: reqwest::Client,
     base_url: String,
-    access_token: std::sync::RwLock<Option<String>>,
-    refresh_token: std::sync::RwLock<Option<String>>,
+    access_token: std::sync::Arc<std::sync::RwLock<Option<String>>>,
+    refresh_token: std::sync::Arc<std::sync::RwLock<Option<String>>>,
 }
 
 impl SecureAuthClient {
@@ -39,8 +39,8 @@ impl SecureAuthClient {
         Self {
             http: reqwest::Client::new(),
             base_url: base_url.trim_end_matches('/').to_string(),
-            access_token: std::sync::RwLock::new(None),
-            refresh_token: std::sync::RwLock::new(None),
+            access_token: std::sync::Arc::new(std::sync::RwLock::new(None)),
+            refresh_token: std::sync::Arc::new(std::sync::RwLock::new(None)),
         }
     }
 
