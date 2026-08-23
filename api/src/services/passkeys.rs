@@ -2,8 +2,9 @@
 //!
 //! Les credentials (structure `Passkey` serialisee) sont chiffres
 //! AES-256-GCM au repos. Les challenges d'enregistrement/authentification
-//! sont conserves en memoire 10 min max (store partagé requis en multi-instance).
+//! sont conserves en memoire 10 min max (store partagÃ© requis en multi-instance).
 
+use sqlx::error::DatabaseError;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD as B64URL;
 use base64::Engine;
 use serde_json::json;

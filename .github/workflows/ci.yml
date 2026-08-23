@@ -21,12 +21,12 @@ jobs:
           RC=0
           cargo check --all-targets > /tmp/api_check.log 2>&1 || RC=$?
           {
-            echo "### cargo check (api) — exit $RC"
+            echo "### cargo check (api) â€” exit $RC"
             echo '```'
             tail -n 300 /tmp/api_check.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          tail -n 400 /tmp/api_check.log > ci-api.log
+          tail -n 400 /tmp/api_check.log > "$GITHUB_WORKSPACE/ci-api.log"
           test "$RC" -eq 0
 
       - name: publish error log
@@ -73,12 +73,12 @@ jobs:
           RC=0
           cargo check --all-targets > /tmp/sdk_check.log 2>&1 || RC=$?
           {
-            echo "### cargo check (sdk/rust) — exit $RC"
+            echo "### cargo check (sdk/rust) â€” exit $RC"
             echo '```'
             tail -n 200 /tmp/sdk_check.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          tail -n 300 /tmp/sdk_check.log > ci-sdk-rust.log
+          tail -n 300 /tmp/sdk_check.log > "$GITHUB_WORKSPACE/ci-sdk-rust.log"
           test "$RC" -eq 0
 
       - name: publish error log
@@ -96,7 +96,7 @@ jobs:
           RC=0
           cargo test > /tmp/sdk_test.log 2>&1 || RC=$?
           {
-            echo "### cargo test (sdk/rust) — exit $RC"
+            echo "### cargo test (sdk/rust) â€” exit $RC"
             echo '```'
             tail -n 150 /tmp/sdk_test.log
             echo '```'

@@ -1,6 +1,7 @@
 //! Utilisateurs : CRUD, recherche, cycle de vie.
 
 use chrono::{DateTime, Utc};
+use sqlx::error::DatabaseError;
 use sqlx::FromRow;
 
 use crate::db::Db;
