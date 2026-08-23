@@ -11,9 +11,47 @@ dashboard admin complet et **SDKs JavaScript/TypeScript, Python, C# et Rust**.
 
 ---
 
+## 🎯 À quoi ça sert ?
+
+Secure-Login s'installe **une seule fois** et prend en charge toute la partie
+« comptes utilisateurs » de n'importe quel projet (site vitrine, boutique,
+app web, API, jeu…). Concrètement, vous n'avez **plus jamais besoin de coder
+un écran de connexion vous-même** :
+
+- 📝 Inscription + email de vérification
+- 🔑 Connexion par mot de passe (stocké de façon inviolable : Argon2id)
+- 📲 Double authentification optionnelle (code à 6 chiffres type Google Authenticator)
+- 👆 Connexion par empreinte digitale / Face ID (Passkeys WebAuthn)
+- 🛡️ Blocage automatique des attaques par force brute et des IP malveillantes
+- 👮 Dashboard admin : voir les utilisateurs, leurs sessions, bloquer, supprimer
+
+## ⚙️ Comment ça fonctionne ? (en 30 secondes)
+
+```
+Navigateur du visiteur          Votre site            Secure-Login (ce repo)
+      │                            │                            │
+      │── saisit email+mdp ───────▶│── POST /auth/login ───────▶│
+      │                            │                            │ vérifie le mot de passe
+      │◀─────── jetons ────────────│◀── access_token (15 min) ──│ crée une session
+      │        (localStorage)      │     refresh_token (30 j)   │
+      │                            │                            │
+      │── visite page privée ─────▶│ GET /auth/me + jeton ─────▶│ dit qui c'est ✅/❌
+```
+
+1. Le serveur Secure-Login tourne à part (ex. `http://localhost:8080`) avec sa base.
+2. Votre site appelle son API quand quelqu'un s'inscrit / se connecte.
+3. L'API renvoie **deux jetons** : un court (15 min) qui prouve l'identité, et un
+   long (30 jours) pour se reconnecter sans retaper le mot de passe.
+4. Chaque page privée présente le jeton court ; expiré ? le long en obtient un
+   nouveau automatiquement — l'utilisateur ne voit rien.
+
+👉 **Guide d'intégration complet avec code copier-coller : [`docs/INTEGRATION.md`](docs/INTEGRATION.md)**
+
+---
+
 ## Sommaire
 
-1. [Fonctionnalités](#fonctionnalités)
+1. [À quoi ça sert / Comment ça marche](#-à-quoi-ça-sert)
 2. [Installation rapide](#installation-rapide)
 3. [Configuration](#configuration)
 4. [API REST](#api-rest)
