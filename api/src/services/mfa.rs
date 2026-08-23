@@ -121,15 +121,7 @@ pub async fn setup(state: &AppState, user_id: &str, email: &str) -> AppResult<(S
     rand::rngs::OsRng.fill_bytes(&mut secret);
 
     let secret_b32 = base32_encode(&secret);
-    let otpauth_url = format!(
-        "otpauth://totp/{}:{}?secret={}&issuer={}&algorithm=SHA1&digits={}&period={}",
-        state.cfg.mfa_issuer,
-        email,
-        secret_b32,
-        state.cfg.mfa_issuer,
-        DIGITS,
-        STEP_SECS
-    );
+    let otpauth_url = otpauth_uri(&state.cfg.mfa_issuer, email, &secret_b32);
 
     let enc_secret = state.enc.encrypt(&hex::encode(secret))?;
     let now = crate::util::now();
@@ -147,6 +139,52 @@ pub async fn setup(state: &AppState, user_id: &str, email: &str) -> AppResult<(S
     .await?;
 
     Ok((otpauth_url, secret_b32))
+}
+
+/// URI otpauth:// standard (Google Authenticator, Authy, 1Password...).
+fn otpauth_uri(issuer: &str, email: &str, secret_b32: &str) -> String {
+    format!(
+        "otpauth://totp/{}:{}?secret={}&issuer={}&algorithm=SHA1&digits={}&period={}",
+        issuer, email, secret_b32, issuer, DIGITS, STEP_SECS
+    )
+}
+
+/// QR code du secret TOTP courant au format SVG (aucune lib image requise).
+pub async fn qrcode_svg(state: &AppState, user_id: &str, email: &str) -> AppResult<String> {
+    let row = get_row(state, user_id)
+        .await?
+        .ok_or_else(|| AppError::validation("MFA not initialized"))?;
+    let secret_hex = state.enc.decrypt(&row.secret_enc)?;
+    let secret = hex::decode(&secret_hex)
+        .map_err(|e| AppError::internal(format!("mfa secret decode: {e}")))?;
+    let url = otpauth_uri(&state.cfg.mfa_issuer, email, &base32_encode(&secret));
+    Ok(qr_to_svg(&url))
+}
+
+/// Encode un texte en QR code SVG (module qrcodegen, sans dependances C).
+fn qr_to_svg(text: &str) -> String {
+    use qrcodegen::{QrCode, QrCodeEcc};
+    let qr = QrCode::encode_text(text, QrCodeEcc::Medium)
+        .map_err(|e| AppError::internal(format!("qrcode: {e:?}")))
+        .unwrap_or_else(|_| QrCode::encode_text("error", QrCodeEcc::Low).unwrap());
+
+    let border = 4;
+    let size = qr.size() + 2 * border;
+    let mut path = String::new();
+    for y in 0..qr.size() {
+        for x in 0..qr.size() {
+            if qr.get_module(x, y) {
+                path.push_str(&format!("M{x + border},{y + border}h1v1h-1z"));
+            }
+        }
+    }
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {size} {size}\" \
+shape-rendering=\"crispEdges\" width=\"{size}\" height=\"{size}\">\
+<rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\
+<path d=\"{path}\" fill=\"#000000\"/></svg>"
+    )
 }
 
 fn load_recovery_hashes(state: &AppState, row: &MfaRow) -> AppResult<Vec<String>> {

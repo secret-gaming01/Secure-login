@@ -2,7 +2,8 @@
 
 use axum::extract::{ConnectInfo, State};
 use axum::http::HeaderMap;
-use axum::routing::post;
+use axum::response::IntoResponse;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::json;
@@ -18,6 +19,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/auth/login", post(login))
         .route("/auth/mfa/enable", post(mfa_enable))
+        .route("/auth/mfa/qrcode", get(mfa_qrcode))
         .route("/auth/mfa/verify", post(mfa_verify))
         .route("/auth/token/refresh", post(token_refresh))
         .route("/auth/logout", post(logout))
@@ -87,7 +89,25 @@ async fn mfa_enable(
         "otpauth_url": url,
         "secret": secret_b32,
         "issuer": state.cfg.mfa_issuer,
+        "qrcode_url": "/auth/mfa/qrcode",
     })))
+}
+
+/// QR code SVG du secret TOTP en attente (session requise).
+async fn mfa_qrcode(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> AppResult<axum::response::Response> {
+    let (ctx, user) = auth_flow::require_auth(&state, &headers).await?;
+    ctx.require_scope("mfa.manage")?;
+    let svg = mfa::qrcode_svg(&state, &ctx.user_id, &user.email).await?;
+    let mut resp = svg.into_response();
+    resp.headers_mut().insert(
+        axum::http::header::CONTENT_TYPE,
+        axum::http::HeaderValue::from_static("image/svg+xml"),
+    );
+    Ok(resp)
+}
 }
 
 #[derive(Deserialize)]
