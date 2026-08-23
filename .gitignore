@@ -33,3 +33,4 @@ obj/
 Thumbs.db
 .idea/
 .vscode/
+ci-*.log
